@@ -1,12 +1,14 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { UseAuth } from "../context/AuthContext"
+import { useNavigate } from "react-router-dom"
 
 const LoginPage = () => {
   
     const [username,setUsername] = useState('')
     const [password,setPassword] = useState('')
    
-    const {login} = UseAuth()
+    const {login, isAuthenticated} = UseAuth()
+    const navigate = useNavigate()
 
     const handleUsername = (e:React.ChangeEvent<HTMLInputElement>)=>{
       setUsername(e.target.value)
@@ -16,6 +18,15 @@ const LoginPage = () => {
       setPassword(e.target.value)
     }
   
+    useEffect(()=>{
+      const token = localStorage.getItem('token')
+      if (token && !isAuthenticated) {
+        login(token)
+        navigate('/transactions')
+      }
+    },[isAuthenticated, login,navigate])
+
+
     const handleLogin = async()=>{
       try {
         const response = await fetch('http://localhost:3000/login', {
@@ -28,6 +39,7 @@ const LoginPage = () => {
         }
         const data = await response.json()
         if (data.success) {
+          localStorage.setItem('user', username)
           login(data.token)
         }
       } catch (error) {
@@ -35,23 +47,7 @@ const LoginPage = () => {
       }
     }
   
-    const handleGetinfo=async()=>{
-    try {
-        const token = localStorage.getItem('token')
-        const response = await fetch(`http://localhost:3000/accounts/${username}`, {
-          headers:{
-            "Authorization":`Bearer ${token}` 
-          }
-        })
-        if (!response.ok) {
-          throw new Error
-        }
-        const data = await response.json();
-        console.log(data)
-    } catch (error) {
-      console.log(error)
-    }
-    }
+
   
     return (
       <>
@@ -59,7 +55,7 @@ const LoginPage = () => {
         <input value={username} onChange={handleUsername} type="text" placeholder='username' />
         <input value={password} onChange={handlePassword} type="password" placeholder='password'/>
         <button onClick={handleLogin}>Login</button>
-        <button onClick={handleGetinfo}>getInfo</button>
+       
       </div>
       </>
     )
